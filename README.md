@@ -19,10 +19,10 @@ Tecnologias utilizadas:
    npm 10.5.0  
 
 Se utilizó:  
-   para el manejo de estados -> zustand  
-   navegación: react navigation  
-   persistencia de datos: AsyncStorage  
-   llamadas a la api: Axios  
+   > para el manejo de estados -> zustand  
+   > navegación: react navigation  
+   > persistencia de datos: AsyncStorage  
+   > llamadas a la api: Axios  
 
 Por otro lado se puede encontrar el video de la app funcionando en el archivo:  
 Screen_Recording_20241227_162522_Expo Go.mp4
