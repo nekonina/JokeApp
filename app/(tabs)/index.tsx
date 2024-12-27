@@ -1,74 +1,92 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, FlatList, TouchableOpacity, useColorScheme } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import Background from '@/components/Background';
+import { useEffect, useState } from 'react';
+import { heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import { useJokeStore } from '@/hooks/useJokeStore';
+import { Button, Icon } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/hooks/useAuthStore';
 
 export default function HomeScreen() {
+
+  const {jokes, setJokes, setType, setFavorites, clear} = useJokeStore()
+  const navigation = useNavigation()
+  const colorScheme = useColorScheme();
+  const {setToken} = useAuthStore()
+  
+  const setJokeSelected = (typeSelected) => {
+    setType(typeSelected)
+    navigation.navigate("jokes")
+  }
+  
+  const getFav = async() => {
+      // await AsyncStorage.clear()
+      const data = JSON.parse(await AsyncStorage.getItem("myUser"))
+      setFavorites(data.fav ?? [])
+  }
+
+  const signout = async() => {
+    const user = JSON.parse(await AsyncStorage.getItem("myUser"))
+    const dataUsers = JSON.parse(await AsyncStorage.getItem("Users"))
+    const updateUsers = dataUsers.map(userInfo => {
+      if(userInfo.email === user.email){
+        return user
+      }else{
+        return userInfo
+      }
+    })
+    await AsyncStorage.setItem('Users', JSON.stringify(updateUsers))
+    
+    if(user){
+      await AsyncStorage.removeItem('myUser')
+      setToken(null)
+      clear()
+      navigation.navigate('(auth)')
+    }
+  }
+
+  useEffect(()=>{
+    setJokes()
+    getFav()
+  }, [])
+
+  const renderItem = ({ item }) => (
+      <Button 
+        contentStyle={{flex:1,borderWidth:1}}
+        style={{flex:1, alignItems:'center', marginBottom:hp(2), justifyContent:'center'}}
+        dark={true}
+        uppercase={true}
+        mode='outlined'
+        onPress={() => setJokeSelected(item)}
+      >
+        {item}
+      </Button>
+  )
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <Background>
+      <TouchableOpacity style={{alignSelf:'flex-end', borderWidth:1}} onPress={() => signout()}>
+        <Icon source={'exit-run'} size={25} color={colorScheme === 'dark' ? 'white' : 'purple'}/>
+      </TouchableOpacity>
+      <ThemedView style={{marginBottom:hp(2), backgroundColor:'transparent'}}>
+           
+            <ThemedText type='subtitle' >Home</ThemedText>
+        </ThemedView>
+      <FlatList 
+          showsVerticalScrollIndicator={false}
+          style={{marginTop: hp(1.5), marginBottom:hp(12)}}
+          data={jokes}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderItem}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    </Background>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  
 });

@@ -1,109 +1,143 @@
-import { StyleSheet, Image, Platform } from 'react-native';
-
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { StyleSheet, Image, Platform, ScrollView, View, FlatList } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import Background from '@/components/Background';
+import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useState } from 'react';
+import { Button, Card, Searchbar, Text } from 'react-native-paper';
+import { searchJokes } from '@/api/getData';
+import { useJokeStore } from '@/hooks/useJokeStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { search } from '@/assets/icons';
+import { shareFunc } from '@/scripts/share';
 
-export default function TabTwoScreen() {
+export default function ExplorerScreen() {
+
+  const {setFavorites, fav} = useJokeStore()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [listOfJokes, setListOfJokes] = useState({
+    result: [],
+    total: 0
+  })
+
+  const getListJoke = async() => {
+    const newList = await searchJokes(searchQuery)
+    setListOfJokes(newList)
+  }
+
+  const isFavFunc = (item) => {
+    if(fav === null){
+        return false
+    }
+    const isFav = fav.find(jokeFav => jokeFav.id === item)
+    return isFav
+}
+
+const setFav = async(newItem) => {
+    
+    const data = JSON.parse(await AsyncStorage.getItem("myUser"))
+
+    let newFavList
+    if(!fav){
+        newFavList = [newItem]
+    }else{
+        const isIncluded = fav.find(joke => joke.id.toString() === newItem.id.toString())
+        if(!isIncluded){
+            newFavList = [newItem, ...fav]
+        }else{
+            newFavList = [...fav]
+        }
+    }
+    
+    const updateUser = {...data, fav: newFavList}
+    await AsyncStorage.setItem('myUser', JSON.stringify(updateUser))
+    setFavorites(newFavList);
+}
+
+const setNewFavList = async(jokeSelected) => {
+  const newFavList = fav.filter(joke => joke.id !== jokeSelected )
+  setFavorites(newFavList)
+  setShowModal(false)
+  await AsyncStorage.setItem('Fav', JSON.stringify(newFavList))
+}
+
+  const renderItem = ({item}) => (
+    <Card style={{marginTop:hp(2.5)}}>
+        <Card.Content>
+            <Text variant="bodyMedium">{item.value}</Text>
+            <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+              <Button 
+                  style={styles.favButton}
+                  mode={ isFavFunc(item.id) ? 'contained' : 'elevated'}
+                  icon={ isFavFunc(item.id) ? 'heart-broken' :'heart'}
+                  onPress={isFavFunc(item.id) 
+                            ?() => setNewFavList(item.id)
+                            :() => setFav(item)}
+              >
+                  Favorito
+              </Button>
+              <Button 
+                  style={styles.favButton}
+                  mode={'elevated'}
+                  icon={'share-variant'}
+                  onPress={() => shareFunc(item.value)}
+              >
+                  Compartir
+              </Button>
+            </View>
+        </Card.Content>
+    </Card>
+  )
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+    <Background>
+      <ThemedView style={{marginBottom: hp(2), backgroundColor:'transparent'}}>
+          <ThemedText type='subtitle' >Busquemos un chiste:</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
+      <Searchbar
+        placeholder="busquemos..."
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        onIconPress={() => getListJoke()}
+        onClearIconPress={() => setListOfJokes({
+          result: [],
+          total: 0
         })}
-      </Collapsible>
-    </ParallaxScrollView>
+        icon={search}
+      />
+      {
+        listOfJokes.total != 0
+        ?(
+          <ThemedView style={{marginVertical: hp(2), backgroundColor:'transparent'}}>
+            <ThemedText type='defaultSemiBold' >{`Hemos encontrados ${listOfJokes.total} coincidencias:`}</ThemedText>
+        </ThemedView>
+        ):null
+      }
+      
+      <FlatList 
+          showsVerticalScrollIndicator={false}
+          style={{marginBottom:hp(10),height:hp(67)}}
+          data={listOfJokes.result}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListEmptyComponent={()=> (
+              <Card style={{marginTop:hp(2.5)}}>
+                  <Card.Content>
+                      <Text variant="bodyMedium" style={{textAlign:'center'}}>Aun no has buscado ningun chiste</Text>
+                  </Card.Content>
+              </Card>
+          )}
+      />
+    </Background>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  favButton:{
+    alignItems:'center', 
+    marginVertical:hp(2), 
+    justifyContent:'center', 
+    width:'45%', 
+    alignSelf:'flex-end'
+}
 });
