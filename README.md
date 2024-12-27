@@ -14,9 +14,9 @@
    ```
 
 Tecnologias utilizadas:  
-   Expo sdk 52  
-   node v21.7.2  
-   npm 10.5.0  
+   > Expo sdk 52  
+   > node v21.7.2  
+   > npm 10.5.0  
 
 Se utilizó:  
    > para el manejo de estados -> zustand  
