@@ -27,4 +27,7 @@ Se utilizó:
 Por otro lado se puede encontrar el video de la app funcionando en el archivo: 
 Screen_Recording_20241227_162522_Expo Go.mp4
 
+No se pudo generar el archivo .ipa debido a que no poseo cuenta de Apple Developer
+
+
    
